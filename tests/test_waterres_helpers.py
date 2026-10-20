@@ -47,6 +47,7 @@ def test_parse_args_defaults() -> None:
     assert args.size == 1920
     assert args.no_resize is False
     assert args.pre_blur is False
+    assert args.resample == "bicubicSharper"
     assert args.unsharp_radius == 2.5
     assert args.unsharp_amount == 20.0
     assert args.no_final_contrast is False
@@ -61,8 +62,10 @@ def test_parse_args_defaults() -> None:
 def test_parse_args_overrides() -> None:
     args = waterres.parse_args(
         ["--input", "photo.jpg", "--auto", "--no-resize", "--no-watermark",
-         "--position", "up-right", "--wm-opacity", "40", "--wm-blend", "Normal"],
+         "--position", "up-right", "--wm-opacity", "40", "--wm-blend", "Normal",
+         "--resample", "preserveDetails"],
     )
+    assert args.resample == "preserveDetails"
     assert args.auto is True
     assert args.no_resize is True
     assert args.no_watermark is True

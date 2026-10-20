@@ -5,7 +5,7 @@
 {mergedOnly: true}`), оригинал со слоями не трогает, и в копии:
 
 1. опционально Gaussian pre-blur;
-2. resize по длинной стороне (`--size`) с Lanczos;
+2. resize по длинной стороне (`--size`) с bicubicSharper;
 3. Unsharp Mask radius 2.5 / amount 20 / threshold 0;
 4. опциональный контрастный слой: duplicate → High Pass 1 → Linear Light 40%;
 5. опционально watermark: `doc_place`, Down-Left, offsets 20/20, opacity 25%,
@@ -14,8 +14,9 @@
 В bridge-режиме результат — новый документ, не сохраняется. `--auto` открывает
 `--input`, обрабатывает и сохраняет результат в `out/waterres-single/<stem>/`.
 
-Почему не `.atn`: `image.imageSize` в PhotoCraft 0.10.0 не экспортируется в `.atn`
-(см. `atn-issue-imageSize.txt`), а `file.placeEmbedded` отключён в MCP-playback.
+По умолчанию используется `bicubicSharper` — Photoshop-совместимый режим, поэтому
+resize переносим в `.atn`. `file.placeEmbedded` в MCP-playback отключён, поэтому
+watermark в скрипте идёт через `doc_place`.
 """
 
 from __future__ import annotations
@@ -111,6 +112,7 @@ class WaterRes:
         resize: bool,
         pre_blur: bool,
         blur_size: float,
+        resample: str,
         unsharp_radius: float,
         unsharp_amount: float,
         threshold: float,
@@ -128,6 +130,7 @@ class WaterRes:
         self._resize = resize
         self._pre_blur = pre_blur
         self._blur_size = blur_size
+        self._resample = resample
         self._unsharp_radius = unsharp_radius
         self._unsharp_amount = unsharp_amount
         self._threshold = threshold
@@ -164,7 +167,7 @@ class WaterRes:
                     await cmd(self._client, "filter.blur.gaussianBlur", {"radius": self._blur_size})
                 await cmd(
                     self._client, "image.imageSize",
-                    {"width": target_w, "height": target_h, "resample": "lanczos"},
+                    {"width": target_w, "height": target_h, "resample": self._resample},
                 )
                 await cmd(
                     self._client, "filter.sharpen.unsharpMask",
@@ -200,6 +203,7 @@ class WaterRes:
             "document": document_name,
             "source_size": [source_w, source_h],
             "size": self._size,
+            "resample": self._resample if self._resize else None,
             "resized": [target_w, target_h] if self._resize else None,
             "pre_blur": {"radius": self._blur_size} if self._resize and self._pre_blur else None,
             "unsharp": (
@@ -266,6 +270,7 @@ def make_waterres(args: argparse.Namespace, client: MCPClient) -> WaterRes:
         resize=not args.no_resize,
         pre_blur=args.pre_blur,
         blur_size=args.blur_size,
+        resample=args.resample,
         unsharp_radius=args.unsharp_radius,
         unsharp_amount=args.unsharp_amount,
         threshold=args.threshold,
@@ -366,6 +371,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--no-resize", action="store_true", help="не менять размер")
     parser.add_argument("--pre-blur", action="store_true", help="Gaussian blur перед resize")
     parser.add_argument("--blur-size", type=float, default=1.0, help="радиус pre-blur")
+    parser.add_argument(
+        "--resample",
+        choices=("nearest", "bilinear", "bicubic", "bicubicSmoother", "bicubicSharper",
+                 "bicubicAutomatic", "automatic", "preserveDetails"),
+        default="bicubicSharper",
+        help="Photoshop-совместимый resample для image.imageSize",
+    )
     parser.add_argument("--unsharp-radius", type=float, default=2.5)
     parser.add_argument("--unsharp-amount", type=float, default=20.0, help="в процентах PhotoCraft")
     parser.add_argument("--threshold", type=float, default=0.0)

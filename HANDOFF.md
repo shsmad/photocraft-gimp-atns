@@ -21,7 +21,8 @@ MIDI-проекта в этот репозиторий.
 - Add Skin Pores/Texture Actions и `.atn` (`scripts/make_addskinnoise_actions.py`);
 - Eyes & Teeth Action с группой и чёрными масками (`scripts/make_eyesteeth_action.py`);
 - Watermark & Resize (single) скрипт (`scripts/waterres_single_poc.py`);
-- Skin Smoothing Actions (`scripts/make_skinsmooth_actions.py`).
+- Skin Smoothing Actions (`scripts/make_skinsmooth_actions.py`);
+- Watermark & Resize 1920 Actions (`scripts/make_waterres_actions.py`).
 
 Артефакты:
 
@@ -33,6 +34,7 @@ MIDI-проекта в этот репозиторий.
 - `actions/eyesteeth.atn` — 18 шагов, диалоги `[2, 6, 10]`, группа `Глаза и зубы`;
 - `actions/eyesteeth.action.json` — журнал Eyes & Teeth;
 - `actions/skinsmooth-{gaussian,median,selective}.atn` — 8 шагов, диалог `[2]`;
+- `actions/waterres-1920-{portrait,landscape}.atn` — 9 шагов, фиксированный 1920;
 - Action уже установлен в `~/.config/photocraft/Presets/actions.json`
   (`SHSMAD / Frequency Split (GB+HP)`, 24 шага, диалоги `[2, 8]`);
 - отчёты: `out/freqsplit-poc/<asset>/report.{md,json}` + `diff/*.png`.
@@ -81,11 +83,17 @@ Git: ветка `main`, remote `origin` настроен. Push — только 
   adjustment layer — этот путь экспортируется в `.atn`, в отличие от `layerMask.hideAll`.
   Группа собирается `layer.groupLayers`; после Play маски проявляются белой кистью.
   Метод `Desaturate + Brightness` пока не портирован.
-- **Watermark & Resize (single)**: `.atn` невозможен — `image.imageSize` пропускается
-  при `actions.save`; `file.placeEmbedded` в MCP-playback отключён. Поэтому MCP-скрипт:
-  merged-копия (`image.duplicate mergedOnly:true`), Lanczos + Unsharp r2.5/20, High Pass
-  1/Linear Light 40%, watermark Down-Left 20/20/25%/Difference через `doc_place`.
-  Issue по resize — `atn-issue-imageSize.txt`.
+- **Watermark & Resize (single)**: используются `bicubicSharper` и `image.imageSize`
+  (Photoshop-совместимый resize, экспортируется в `.atn`). Lanczos не используем.
+  MCP-скрипт: merged-копия (`image.duplicate mergedOnly:true`), Unsharp r2.5/20,
+  High Pass 1/Linear Light 40%, watermark Down-Left 20/20/25%/Difference через
+  `doc_place`.
+- **Watermark Actions 1920**: один Action не умеет long-edge для разных пропорций,
+  поэтому два `.atn` — 1280×1920 (2:3) и 1920×1280 (3:2). Первый шаг
+  `layer.mergeVisible` (flatten текущего документа); watermark через
+  `file.placeEmbedded` + `layer.translate` Down-Left 20/20 + Difference 25%.
+  Путь watermark в `.atn` абсолютный; MCP-playback `file.placeEmbedded` отключён —
+  prefix (resize/sharpening) проверяется, watermark — в GUI/Photoshop.
 - **Skin Smoothing**: `Lighten` — это PhotoCraft-имя для GIMP Lighten Only. Группа
   собирается `layer.groupLayers`; selective threshold = `max_delta * 255`. GB+HP:
   создавать base → soft → high → low, иначе группа получается в обратном порядке.
@@ -177,7 +185,10 @@ PHOTOCRAFT_CLI=<cli> .venv/bin/python scripts/addskinnoise_poc.py --input <file>
 # Skin Smoothing Actions
 .venv/bin/python scripts/make_skinsmooth_actions.py
 
-# Watermark & Resize (single)
+# Watermark & Resize 1920 Actions
+.venv/bin/python scripts/make_waterres_actions.py
+
+# Watermark & Resize (single), гибкая длинная сторона
 .venv/bin/python scripts/waterres_single_poc.py --size 1920
 PHOTOCRAFT_CLI=<cli> .venv/bin/python scripts/waterres_single_poc.py \
   --auto --input <file> --out out/waterres-single
@@ -185,7 +196,8 @@ PHOTOCRAFT_CLI=<cli> .venv/bin/python scripts/waterres_single_poc.py \
 pdm run check   # lint + typecheck + test
 PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py \
   tests/test_integration_addskinnoise_actions.py tests/test_integration_eyesteeth_action.py \
-  tests/test_integration_waterres_single.py tests/test_integration_skinsmooth_actions.py
+  tests/test_integration_waterres_single.py tests/test_integration_waterres_actions.py \
+  tests/test_integration_skinsmooth_actions.py
 ```
 
 ## Результаты (radius 10, native vs GIMP)
@@ -228,11 +240,13 @@ PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py \
 
 ## Следующие шаги
 
-- Визуально проверить Add Skin Actions, Eyes & Teeth, Skin Smoothing и Watermark & Resize в GUI.
+- Визуально проверить Add Skin Actions, Eyes & Teeth, Skin Smoothing, Watermark & Resize
+  и Watermark Actions 1920 в GUI/Photoshop.
 - Когда Emboss появится в `.atn`: перегенерировать `addskin-pores.atn` с настоящим
   Emboss (см. раздел выше) и обновить issue/документацию.
-- Когда `image.imageSize` появится в `.atn`: можно сделать portable resize Action
-  (см. `atn-issue-imageSize.txt`).
+- Для resize использовать `image.imageSize` с `bicubicSharper`; Lanczos не нужен.
+- При необходимости других пропорций (4:3, 16:9) добавить в `make_waterres_actions.py`
+  соответствующие width/height.
 - Следующий кандидат: `skintone` (сложнее: цветокоррекция + маска по коже).
 - Внешний скрипт rembg (план из сессии: экспорт слоя → `:7000` → маска в слой).
 - CI не планируется; локальный гейт — `pdm run check`.

@@ -31,8 +31,10 @@ GIMP-эталон и попиксельное сравнение. MIDI-прос�
   экспорт `.atn` и native JSON.
 - `scripts/make_eyesteeth_action.py` — Eyes & Teeth Action (группа + adjustment layers),
   экспорт `.atn`.
-- `scripts/waterres_single_poc.py` — Watermark & Resize (single) через MCP; `.atn` не
-  используется, потому что `image.imageSize` в него не экспортируется.
+- `scripts/waterres_single_poc.py` — Watermark & Resize (single) через MCP; гибкая
+  длинная сторона, non-destructive merged-копия.
+- `scripts/make_waterres_actions.py` — Watermark & Resize 1920 Actions (portrait/
+  landscape), экспорт `.atn`.
 - `scripts/make_skinsmooth_actions.py` — Skin Smoothing Actions (Gaussian/Median/
   Selective, опционально GB+HP), экспорт `.atn`.
 - `scripts/gimp_freqsplit_reference.py`, `scripts/run_gimp_reference.sh` — эталон GIMP.
@@ -48,6 +50,8 @@ GIMP-эталон и попиксельное сравнение. MIDI-прос�
 - `tests/test_integration_waterres_single.py` — opt-in auto resize + watermark.
 - `tests/test_skinsmooth_helpers.py` — юнит-тесты blur/GB+HP шагов.
 - `tests/test_integration_skinsmooth_actions.py` — opt-in генерация/playback.
+- `tests/test_waterres_actions_helpers.py` — юнит-тесты фиксированных 1920 Actions.
+- `tests/test_integration_waterres_actions.py` — opt-in генерация/roundtrip.
 
 ## Команды
 
@@ -64,7 +68,8 @@ pdm run test tests/test_poc_helpers.py::test_metrics_identical_and_full_differen
 # integration-тесты (roundtrip .atn, генерация/playback Add Skin Actions)
 PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py \
   tests/test_integration_addskinnoise_actions.py tests/test_integration_eyesteeth_action.py \
-  tests/test_integration_waterres_single.py tests/test_integration_skinsmooth_actions.py
+  tests/test_integration_waterres_single.py tests/test_integration_waterres_actions.py \
+  tests/test_integration_skinsmooth_actions.py
 
 # Add Skin Actions: regenerate actions/addskin-*.atn + native JSON
 .venv/bin/python scripts/make_addskinnoise_actions.py
@@ -75,7 +80,10 @@ PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py \
 # Skin Smoothing Actions: regenerate actions/skinsmooth-*.atn
 .venv/bin/python scripts/make_skinsmooth_actions.py
 
-# Watermark & Resize (single): текущий GUI-документ
+# Watermark & Resize 1920 Actions: portrait/landscape .atn
+.venv/bin/python scripts/make_waterres_actions.py
+
+# Watermark & Resize (single): текущий GUI-документ, гибкая длинная сторона
 .venv/bin/python scripts/waterres_single_poc.py --size 1920
 
 # headless-проверка
@@ -194,15 +202,20 @@ export PHOTOCRAFT_CLI=$PWD/squashfs-root/usr/bin/photocraft-cli
 ## Watermark & Resize (single)
 
 - `scripts/waterres_single_poc.py` — MCP-скрипт, не `.atn`: `image.duplicate
-  {mergedOnly: true}` (оригинал не трогается), Lanczos resize по длинной стороне,
+  {mergedOnly: true}` (оригинал не трогается), bicubicSharper resize по длинной стороне,
   Unsharp `radius 2.5 / amount 20 / threshold 0`, High Pass 1 + Linear Light 40%,
   watermark `watermark_bw_100.png` (Down-Left 20/20, 25%, Difference).
-- `.atn` с resize невозможен: `image.imageSize` пропускается при `actions.save`
-  (`atn-issue-imageSize.txt`); `file.placeEmbedded` экспортируется, но MCP-playback
-  отключён; `doc_place` работает в MCP. Bridge требует GUI с control-портом; `--auto`
-  работает headless и пишет `result.png` + `manifest.json`.
+- `image.imageSize` с `bicubicSharper` экспортируется в `.atn`; Lanczos не используем.
+  `file.placeEmbedded` экспортируется, но MCP-playback отключён; `doc_place` работает
+  в MCP. Bridge требует GUI с control-портом; `--auto` работает headless и пишет
+  `result.png` + `manifest.json`.
 - Pre-blur (`--pre-blur`) — только в скрипте; в `.atn` runtime-флага нет. Watermark
   не масштабируется; маска/слои не нужны.
+- `make_waterres_actions.py`: два Action 1920 (portrait 1280×1920, landscape 1920×1280),
+  9 шагов. `layer.mergeVisible` → Image Size `bicubicSharper` → Unsharp 2.5/20 →
+  High Pass 1 / Linear Light 40% → `file.placeEmbedded` → translate Down-Left 20/20 →
+  Difference 25%. Watermark path в `.atn` абсолютный; MCP-playback placeEmbedded
+  отключён. Другие пропорции — только новыми width/height.
 
 ## GIMP-рецепты → PhotoCraft (только при портировании)
 

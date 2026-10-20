@@ -1,0 +1,87 @@
+{
+  "action": {
+    "color": "",
+    "dialogs": [],
+    "disabled": [],
+    "name": "Watermark & Resize 1920 Portrait",
+    "set": "SHSMAD",
+    "steps": [
+      [
+        "layer.mergeVisible",
+        {}
+      ],
+      [
+        "image.imageSize",
+        {
+          "height": 1920,
+          "resample": "bicubicSharper",
+          "width": 1280
+        }
+      ],
+      [
+        "filter.sharpen.unsharpMask",
+        {
+          "amount": 20,
+          "radius": 2.5,
+          "threshold": 0
+        }
+      ],
+      [
+        "layer.duplicate",
+        {
+          "name": "Final contrast (HP 1 1)"
+        }
+      ],
+      [
+        "filter.other.highPass",
+        {
+          "radius": 1
+        }
+      ],
+      [
+        "layer.setProps",
+        {
+          "blend": "Linear Light",
+          "layer": "Final contrast (HP 1 1)",
+          "opacity": 0.4
+        }
+      ],
+      [
+        "file.placeEmbedded",
+        {
+          "path": "/home/shsmad/projects/photocraft-gimp-atns/watermark_bw_100.png",
+          "scale": 100
+        }
+      ],
+      [
+        "layer.translate",
+        {
+          "dx": -570,
+          "dy": 902,
+          "layer": "watermark_bw_100"
+        }
+      ],
+      [
+        "layer.setProps",
+        {
+          "blend": "Difference",
+          "layer": "watermark_bw_100",
+          "opacity": 0.25
+        }
+      ]
+    ]
+  },
+  "stopped": {
+    "action": "Watermark & Resize 1920 Portrait",
+    "steps": 6
+  },
+  "saved": {
+    "actions": [
+      "Watermark & Resize 1920 Portrait"
+    ],
+    "bytes": 1519,
+    "set": "SHSMAD",
+    "skipped": [],
+    "steps": 9
+  }
+}

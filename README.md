@@ -23,7 +23,9 @@
 - `scripts/make_eyesteeth_action.py` — записывает Eyes & Teeth Action с группой и
   adjustment layers, экспортирует `.atn`.
 - `scripts/waterres_single_poc.py` — Watermark & Resize (single) над текущим
-  изображением через MCP; `.atn` для resize невозможен.
+  изображением через MCP (гибкая длинная сторона, non-destructive копия).
+- `scripts/make_waterres_actions.py` — фиксированные Watermark & Resize 1920 Actions
+  (portrait/landscape) и экспорт `.atn`.
 - `scripts/make_skinsmooth_actions.py` — Skin Smoothing Actions (Gaussian/Median/
   Selective) и экспорт `.atn`.
 - `scripts/gimp_freqsplit_reference.py` + `scripts/run_gimp_reference.sh` — эталон
@@ -215,14 +217,35 @@ PHOTOCRAFT_CLI=/path/to/photocraft-cli .venv/bin/python scripts/waterres_single_
 ```
 
 Скрипт делает merged-копию (`image.duplicate {mergedOnly: true}`), оригинал со слоями
-не трогает. В копии: Lanczos resize по длинной стороне, Unsharp Mask r2.5/20/0,
+не трогает. В копии: bicubicSharper resize по длинной стороне, Unsharp Mask r2.5/20/0,
 High Pass 1 + Linear Light 40%, watermark `watermark_bw_100.png` (Down-Left 20/20,
 opacity 25%, Difference, без масштабирования). Флаги: `--pre-blur`,
 `--no-final-contrast`, `--no-watermark`, `--no-resize`.
 
-Чистый `.atn` для resize невозможен: `image.imageSize` не экспортируется в PhotoCraft
-0.10.0. Детали и repro — `atn-issue-imageSize.txt`. Результаты headless:
+Resize использует Photoshop-совместимый `bicubicSharper`, поэтому `image.imageSize`
+переносим в `.atn`. Результаты headless:
 `out/waterres-single/<asset>/{result.png,manifest.json}`.
+
+#### Watermark & Resize 1920 Actions
+
+```bash
+.venv/bin/python scripts/make_waterres_actions.py
+```
+
+Два фиксированных переносимых Action (9 шагов, без диалогов):
+
+- `actions/waterres-1920-portrait.atn` — 1280×1920 (2:3);
+- `actions/waterres-1920-landscape.atn` — 1920×1280 (3:2).
+
+Внутри: `layer.mergeVisible` → Image Size `bicubicSharper` → Unsharp r2.5/20 →
+High Pass 1 + Linear Light 40% → `file.placeEmbedded` (`watermark_bw_100.png`) →
+translate в Down-Left 20/20 → Difference 25%.
+
+Ограничения: только пропорции 2:3/3:2 — для других нужны свои width/height; Action
+flatten'ит текущий документ (`mergeVisible`); путь к watermark в `.atn` абсолютный;
+MCP-playback шага `file.placeEmbedded` отключён, поэтому watermark проверяется в GUI
+или Photoshop. Для произвольной длинной стороны и non-destructive копии используйте
+`waterres_single_poc.py`.
 
 ## Проверки
 
