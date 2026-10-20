@@ -1,0 +1,75 @@
+{
+  "action": {
+    "color": "",
+    "dialogs": [
+      2
+    ],
+    "disabled": [],
+    "name": "Skin Smoothing (Gaussian)",
+    "set": "SHSMAD",
+    "steps": [
+      [
+        "layer.duplicate",
+        {
+          "name": "Оригинал"
+        }
+      ],
+      [
+        "layer.duplicate",
+        {
+          "layer": "Оригинал",
+          "name": "(a) Мягкость (Lighten Only, gaussian 10)"
+        }
+      ],
+      [
+        "filter.blur.gaussianBlur",
+        {
+          "radius": 10.0
+        }
+      ],
+      [
+        "layer.setProps",
+        {
+          "blend": "Lighten",
+          "layer": "(a) Мягкость (Lighten Only, gaussian 10)"
+        }
+      ],
+      [
+        "layer.select",
+        {
+          "layer": "Оригинал"
+        }
+      ],
+      [
+        "layer.select",
+        {
+          "layer": "(a) Мягкость (Lighten Only, gaussian 10)",
+          "mode": "add"
+        }
+      ],
+      [
+        "layer.groupLayers",
+        {}
+      ],
+      [
+        "layer.setProps",
+        {
+          "name": "Сглаживание кожи"
+        }
+      ]
+    ]
+  },
+  "stopped": {
+    "action": "Skin Smoothing (Gaussian)",
+    "steps": 8
+  },
+  "saved": {
+    "actions": [
+      "Skin Smoothing (Gaussian)"
+    ],
+    "bytes": 1399,
+    "set": "SHSMAD",
+    "skipped": [],
+    "steps": 8
+  }
+}

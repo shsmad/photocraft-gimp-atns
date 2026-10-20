@@ -20,7 +20,8 @@ MIDI-проекта в этот репозиторий.
 - недеструктивный PoC Add Skin Noise в режимах `pore`/`texture` (`scripts/addskinnoise_poc.py`);
 - Add Skin Pores/Texture Actions и `.atn` (`scripts/make_addskinnoise_actions.py`);
 - Eyes & Teeth Action с группой и чёрными масками (`scripts/make_eyesteeth_action.py`);
-- Watermark & Resize (single) скрипт (`scripts/waterres_single_poc.py`).
+- Watermark & Resize (single) скрипт (`scripts/waterres_single_poc.py`);
+- Skin Smoothing Actions (`scripts/make_skinsmooth_actions.py`).
 
 Артефакты:
 
@@ -31,6 +32,7 @@ MIDI-проекта в этот репозиторий.
 - `actions/addskin-pores-emboss.action.json` — native Action с Emboss (без `.atn`);
 - `actions/eyesteeth.atn` — 18 шагов, диалоги `[2, 6, 10]`, группа `Глаза и зубы`;
 - `actions/eyesteeth.action.json` — журнал Eyes & Teeth;
+- `actions/skinsmooth-{gaussian,median,selective}.atn` — 8 шагов, диалог `[2]`;
 - Action уже установлен в `~/.config/photocraft/Presets/actions.json`
   (`SHSMAD / Frequency Split (GB+HP)`, 24 шага, диалоги `[2, 8]`);
 - отчёты: `out/freqsplit-poc/<asset>/report.{md,json}` + `diff/*.png`.
@@ -84,6 +86,9 @@ Git: ветка `main`, remote `origin` настроен. Push — только 
   merged-копия (`image.duplicate mergedOnly:true`), Lanczos + Unsharp r2.5/20, High Pass
   1/Linear Light 40%, watermark Down-Left 20/20/25%/Difference через `doc_place`.
   Issue по resize — `atn-issue-imageSize.txt`.
+- **Skin Smoothing**: `Lighten` — это PhotoCraft-имя для GIMP Lighten Only. Группа
+  собирается `layer.groupLayers`; selective threshold = `max_delta * 255`. GB+HP:
+  создавать base → soft → high → low, иначе группа получается в обратном порядке.
 
 ## Окружение (факты)
 
@@ -169,6 +174,9 @@ PHOTOCRAFT_CLI=<cli> .venv/bin/python scripts/addskinnoise_poc.py --input <file>
 # Eyes & Teeth Action
 .venv/bin/python scripts/make_eyesteeth_action.py
 
+# Skin Smoothing Actions
+.venv/bin/python scripts/make_skinsmooth_actions.py
+
 # Watermark & Resize (single)
 .venv/bin/python scripts/waterres_single_poc.py --size 1920
 PHOTOCRAFT_CLI=<cli> .venv/bin/python scripts/waterres_single_poc.py \
@@ -177,7 +185,7 @@ PHOTOCRAFT_CLI=<cli> .venv/bin/python scripts/waterres_single_poc.py \
 pdm run check   # lint + typecheck + test
 PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py \
   tests/test_integration_addskinnoise_actions.py tests/test_integration_eyesteeth_action.py \
-  tests/test_integration_waterres_single.py
+  tests/test_integration_waterres_single.py tests/test_integration_skinsmooth_actions.py
 ```
 
 ## Результаты (radius 10, native vs GIMP)
@@ -220,11 +228,11 @@ PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py \
 
 ## Следующие шаги
 
-- Визуально проверить Add Skin Actions, Eyes & Teeth и Watermark & Resize в GUI.
+- Визуально проверить Add Skin Actions, Eyes & Teeth, Skin Smoothing и Watermark & Resize в GUI.
 - Когда Emboss появится в `.atn`: перегенерировать `addskin-pores.atn` с настоящим
   Emboss (см. раздел выше) и обновить issue/документацию.
 - Когда `image.imageSize` появится в `.atn`: можно сделать portable resize Action
   (см. `atn-issue-imageSize.txt`).
-- Следующие кандидаты: `skinsmooth`, затем `skintone`.
+- Следующий кандидат: `skintone` (сложнее: цветокоррекция + маска по коже).
 - Внешний скрипт rembg (план из сессии: экспорт слоя → `:7000` → маска в слой).
 - CI не планируется; локальный гейт — `pdm run check`.

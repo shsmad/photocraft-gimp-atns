@@ -33,6 +33,8 @@ GIMP-эталон и попиксельное сравнение. MIDI-прос�
   экспорт `.atn`.
 - `scripts/waterres_single_poc.py` — Watermark & Resize (single) через MCP; `.atn` не
   используется, потому что `image.imageSize` в него не экспортируется.
+- `scripts/make_skinsmooth_actions.py` — Skin Smoothing Actions (Gaussian/Median/
+  Selective, опционально GB+HP), экспорт `.atn`.
 - `scripts/gimp_freqsplit_reference.py`, `scripts/run_gimp_reference.sh` — эталон GIMP.
 - `scripts/compare_images.py` — RMSE/PSNR/max, diff-PNG, `report.{md,json}`.
 - `tests/test_poc_helpers.py` — юнит-тесты слоёв/метрик.
@@ -44,6 +46,8 @@ GIMP-эталон и попиксельное сравнение. MIDI-прос�
 - `tests/test_integration_eyesteeth_action.py` — opt-in генерация/playback Eyes & Teeth.
 - `tests/test_waterres_helpers.py` — юнит-тесты размеров/позиции watermark.
 - `tests/test_integration_waterres_single.py` — opt-in auto resize + watermark.
+- `tests/test_skinsmooth_helpers.py` — юнит-тесты blur/GB+HP шагов.
+- `tests/test_integration_skinsmooth_actions.py` — opt-in генерация/playback.
 
 ## Команды
 
@@ -60,13 +64,16 @@ pdm run test tests/test_poc_helpers.py::test_metrics_identical_and_full_differen
 # integration-тесты (roundtrip .atn, генерация/playback Add Skin Actions)
 PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py \
   tests/test_integration_addskinnoise_actions.py tests/test_integration_eyesteeth_action.py \
-  tests/test_integration_waterres_single.py
+  tests/test_integration_waterres_single.py tests/test_integration_skinsmooth_actions.py
 
 # Add Skin Actions: regenerate actions/addskin-*.atn + native JSON
 .venv/bin/python scripts/make_addskinnoise_actions.py
 
 # Eyes & Teeth Action: regenerate actions/eyesteeth.{atn,action.json}
 .venv/bin/python scripts/make_eyesteeth_action.py
+
+# Skin Smoothing Actions: regenerate actions/skinsmooth-*.atn
+.venv/bin/python scripts/make_skinsmooth_actions.py
 
 # Watermark & Resize (single): текущий GUI-документ
 .venv/bin/python scripts/waterres_single_poc.py --size 1920
@@ -172,6 +179,17 @@ export PHOTOCRAFT_CLI=$PWD/squashfs-root/usr/bin/photocraft-cli
   `layer.groupLayers`.
 - После Play эффект проявляется белой кистью. Метод `Desaturate + Brightness` не
   портирован; используется Hue/Saturation.
+
+## Skin Smoothing (Action)
+
+- `scripts/make_skinsmooth_actions.py` → `actions/skinsmooth-{gaussian,median,selective}.atn`
+  (8 шагов, диалог `[2]`). Группа `Сглаживание кожи`: `Оригинал` + soft-слой
+  `Lighten` с blur. Selective: Surface Blur, threshold = `max_delta * 255`.
+- `--gbhp` добавляет `НЧ (GB N)` (Gaussian) и `ВЧ (HP N)` (High Pass, Linear Light,
+  hp_opacity); 15 шагов, диалоги `[2, 5, 8]`. Порядок создания: base → soft → high → low;
+  `layer.duplicate` вставляет новую копию над base, поэтому группа получается
+  soft/high/low/base.
+- Все шаги (`Lighten`, blur, high pass, groupLayers) экспортируются в `.atn` без `skipped`.
 
 ## Watermark & Resize (single)
 

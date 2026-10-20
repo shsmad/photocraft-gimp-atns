@@ -1,0 +1,75 @@
+{
+  "action": {
+    "color": "",
+    "dialogs": [
+      2
+    ],
+    "disabled": [],
+    "name": "Skin Smoothing (Median)",
+    "set": "SHSMAD",
+    "steps": [
+      [
+        "layer.duplicate",
+        {
+          "name": "Оригинал"
+        }
+      ],
+      [
+        "layer.duplicate",
+        {
+          "layer": "Оригинал",
+          "name": "(a) Мягкость (Lighten Only, median 10)"
+        }
+      ],
+      [
+        "filter.noise.median",
+        {
+          "radius": 10
+        }
+      ],
+      [
+        "layer.setProps",
+        {
+          "blend": "Lighten",
+          "layer": "(a) Мягкость (Lighten Only, median 10)"
+        }
+      ],
+      [
+        "layer.select",
+        {
+          "layer": "Оригинал"
+        }
+      ],
+      [
+        "layer.select",
+        {
+          "layer": "(a) Мягкость (Lighten Only, median 10)",
+          "mode": "add"
+        }
+      ],
+      [
+        "layer.groupLayers",
+        {}
+      ],
+      [
+        "layer.setProps",
+        {
+          "name": "Сглаживание кожи"
+        }
+      ]
+    ]
+  },
+  "stopped": {
+    "action": "Skin Smoothing (Median)",
+    "steps": 8
+  },
+  "saved": {
+    "actions": [
+      "Skin Smoothing (Median)"
+    ],
+    "bytes": 1376,
+    "set": "SHSMAD",
+    "skipped": [],
+    "steps": 8
+  }
+}

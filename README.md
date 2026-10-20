@@ -24,6 +24,8 @@
   adjustment layers, экспортирует `.atn`.
 - `scripts/waterres_single_poc.py` — Watermark & Resize (single) над текущим
   изображением через MCP; `.atn` для resize невозможен.
+- `scripts/make_skinsmooth_actions.py` — Skin Smoothing Actions (Gaussian/Median/
+  Selective) и экспорт `.atn`.
 - `scripts/gimp_freqsplit_reference.py` + `scripts/run_gimp_reference.sh` — эталон
   реальным GIMP-плагином `plug-in-shsmad-process-freqautosplit`.
 - `scripts/compare_images.py` — RMSE/PSNR/max/доля `|Δ|>2/255`, diff-PNG и отчёты.
@@ -173,6 +175,32 @@ Hue/Saturation. Установка:
 
 ```bash
 .venv/bin/python scripts/install_freqautosplit_action.py --atn actions/eyesteeth.atn
+```
+
+### Skin Smoothing Actions
+
+```bash
+.venv/bin/python scripts/make_skinsmooth_actions.py
+```
+
+Создаёт три переносимых Action с диалогом радиуса (`[2]`):
+
+- `actions/skinsmooth-gaussian.atn` — Gaussian Blur 10;
+- `actions/skinsmooth-median.atn` — Median 10;
+- `actions/skinsmooth-selective.atn` — Surface Blur 10 / threshold 51.
+
+Внутри — группа `Сглаживание кожи`: копия `Оригинал` и слой
+`(a) Мягкость (Lighten Only, <type> <radius>)`. Опционально:
+
+```bash
+.venv/bin/python scripts/make_skinsmooth_actions.py --blur-type gaussian --gbhp
+```
+
+добавит `НЧ (GB 3)` + `ВЧ (HP 3)` Linear Light 50%. Selective threshold =
+`max_delta * 255` (0.2 → 51). Установка:
+
+```bash
+.venv/bin/python scripts/install_freqautosplit_action.py --atn actions/skinsmooth-gaussian.atn
 ```
 
 ### Watermark & Resize (single)
