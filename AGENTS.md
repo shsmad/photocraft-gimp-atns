@@ -31,6 +31,8 @@ GIMP-эталон и попиксельное сравнение. MIDI-прос�
   экспорт `.atn` и native JSON.
 - `scripts/make_eyesteeth_action.py` — Eyes & Teeth Action (группа + adjustment layers),
   экспорт `.atn`.
+- `scripts/waterres_single_poc.py` — Watermark & Resize (single) через MCP; `.atn` не
+  используется, потому что `image.imageSize` в него не экспортируется.
 - `scripts/gimp_freqsplit_reference.py`, `scripts/run_gimp_reference.sh` — эталон GIMP.
 - `scripts/compare_images.py` — RMSE/PSNR/max, diff-PNG, `report.{md,json}`.
 - `tests/test_poc_helpers.py` — юнит-тесты слоёв/метрик.
@@ -40,6 +42,8 @@ GIMP-эталон и попиксельное сравнение. MIDI-прос�
 - `tests/test_integration_convert.py` — opt-in roundtrip `.atn` (нужен `PHOTOCRAFT_CLI`).
 - `tests/test_integration_addskinnoise_actions.py` — opt-in генерация и playback Actions.
 - `tests/test_integration_eyesteeth_action.py` — opt-in генерация/playback Eyes & Teeth.
+- `tests/test_waterres_helpers.py` — юнит-тесты размеров/позиции watermark.
+- `tests/test_integration_waterres_single.py` — opt-in auto resize + watermark.
 
 ## Команды
 
@@ -55,13 +59,21 @@ pdm run test tests/test_poc_helpers.py::test_metrics_identical_and_full_differen
 
 # integration-тесты (roundtrip .atn, генерация/playback Add Skin Actions)
 PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py \
-  tests/test_integration_addskinnoise_actions.py tests/test_integration_eyesteeth_action.py
+  tests/test_integration_addskinnoise_actions.py tests/test_integration_eyesteeth_action.py \
+  tests/test_integration_waterres_single.py
 
 # Add Skin Actions: regenerate actions/addskin-*.atn + native JSON
 .venv/bin/python scripts/make_addskinnoise_actions.py
 
 # Eyes & Teeth Action: regenerate actions/eyesteeth.{atn,action.json}
 .venv/bin/python scripts/make_eyesteeth_action.py
+
+# Watermark & Resize (single): текущий GUI-документ
+.venv/bin/python scripts/waterres_single_poc.py --size 1920
+
+# headless-проверка
+PHOTOCRAFT_CLI=<cli> .venv/bin/python scripts/waterres_single_poc.py \
+  --auto --input <file> --out out/waterres-single
 
 # скрипты: PYTHONPATH не нужен — скрипт сам вставляет src в sys.path
 .venv/bin/python scripts/freqautosplit_poc.py --input <file>
@@ -160,6 +172,19 @@ export PHOTOCRAFT_CLI=$PWD/squashfs-root/usr/bin/photocraft-cli
   `layer.groupLayers`.
 - После Play эффект проявляется белой кистью. Метод `Desaturate + Brightness` не
   портирован; используется Hue/Saturation.
+
+## Watermark & Resize (single)
+
+- `scripts/waterres_single_poc.py` — MCP-скрипт, не `.atn`: `image.duplicate
+  {mergedOnly: true}` (оригинал не трогается), Lanczos resize по длинной стороне,
+  Unsharp `radius 2.5 / amount 20 / threshold 0`, High Pass 1 + Linear Light 40%,
+  watermark `watermark_bw_100.png` (Down-Left 20/20, 25%, Difference).
+- `.atn` с resize невозможен: `image.imageSize` пропускается при `actions.save`
+  (`atn-issue-imageSize.txt`); `file.placeEmbedded` экспортируется, но MCP-playback
+  отключён; `doc_place` работает в MCP. Bridge требует GUI с control-портом; `--auto`
+  работает headless и пишет `result.png` + `manifest.json`.
+- Pre-blur (`--pre-blur`) — только в скрипте; в `.atn` runtime-флага нет. Watermark
+  не масштабируется; маска/слои не нужны.
 
 ## GIMP-рецепты → PhotoCraft (только при портировании)
 

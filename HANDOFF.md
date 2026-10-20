@@ -19,7 +19,8 @@ MIDI-проекта в этот репозиторий.
 - opt-in integration-тест конвертера и `pdm run check`;
 - недеструктивный PoC Add Skin Noise в режимах `pore`/`texture` (`scripts/addskinnoise_poc.py`);
 - Add Skin Pores/Texture Actions и `.atn` (`scripts/make_addskinnoise_actions.py`);
-- Eyes & Teeth Action с группой и чёрными масками (`scripts/make_eyesteeth_action.py`).
+- Eyes & Teeth Action с группой и чёрными масками (`scripts/make_eyesteeth_action.py`);
+- Watermark & Resize (single) скрипт (`scripts/waterres_single_poc.py`).
 
 Артефакты:
 
@@ -78,6 +79,11 @@ Git: ветка `main`, remote `origin` настроен. Push — только 
   adjustment layer — этот путь экспортируется в `.atn`, в отличие от `layerMask.hideAll`.
   Группа собирается `layer.groupLayers`; после Play маски проявляются белой кистью.
   Метод `Desaturate + Brightness` пока не портирован.
+- **Watermark & Resize (single)**: `.atn` невозможен — `image.imageSize` пропускается
+  при `actions.save`; `file.placeEmbedded` в MCP-playback отключён. Поэтому MCP-скрипт:
+  merged-копия (`image.duplicate mergedOnly:true`), Lanczos + Unsharp r2.5/20, High Pass
+  1/Linear Light 40%, watermark Down-Left 20/20/25%/Difference через `doc_place`.
+  Issue по resize — `atn-issue-imageSize.txt`.
 
 ## Окружение (факты)
 
@@ -163,9 +169,15 @@ PHOTOCRAFT_CLI=<cli> .venv/bin/python scripts/addskinnoise_poc.py --input <file>
 # Eyes & Teeth Action
 .venv/bin/python scripts/make_eyesteeth_action.py
 
+# Watermark & Resize (single)
+.venv/bin/python scripts/waterres_single_poc.py --size 1920
+PHOTOCRAFT_CLI=<cli> .venv/bin/python scripts/waterres_single_poc.py \
+  --auto --input <file> --out out/waterres-single
+
 pdm run check   # lint + typecheck + test
 PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py \
-  tests/test_integration_addskinnoise_actions.py tests/test_integration_eyesteeth_action.py
+  tests/test_integration_addskinnoise_actions.py tests/test_integration_eyesteeth_action.py \
+  tests/test_integration_waterres_single.py
 ```
 
 ## Результаты (radius 10, native vs GIMP)
@@ -208,9 +220,11 @@ PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py \
 
 ## Следующие шаги
 
-- Визуально проверить Add Skin Actions и Eyes & Teeth в GUI; при необходимости — native Emboss.
+- Визуально проверить Add Skin Actions, Eyes & Teeth и Watermark & Resize в GUI.
 - Когда Emboss появится в `.atn`: перегенерировать `addskin-pores.atn` с настоящим
   Emboss (см. раздел выше) и обновить issue/документацию.
-- Следующие кандидаты: `skinsmooth`, затем `skintone`/`waterresbatch`.
+- Когда `image.imageSize` появится в `.atn`: можно сделать portable resize Action
+  (см. `atn-issue-imageSize.txt`).
+- Следующие кандидаты: `skinsmooth`, затем `skintone`.
 - Внешний скрипт rembg (план из сессии: экспорт слоя → `:7000` → маска в слой).
 - CI не планируется; локальный гейт — `pdm run check`.

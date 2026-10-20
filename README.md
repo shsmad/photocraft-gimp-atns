@@ -22,6 +22,8 @@
   проверяет playback и экспортирует `.atn`.
 - `scripts/make_eyesteeth_action.py` — записывает Eyes & Teeth Action с группой и
   adjustment layers, экспортирует `.atn`.
+- `scripts/waterres_single_poc.py` — Watermark & Resize (single) над текущим
+  изображением через MCP; `.atn` для resize невозможен.
 - `scripts/gimp_freqsplit_reference.py` + `scripts/run_gimp_reference.sh` — эталон
   реальным GIMP-плагином `plug-in-shsmad-process-freqautosplit`.
 - `scripts/compare_images.py` — RMSE/PSNR/max/доля `|Δ|>2/255`, diff-PNG и отчёты.
@@ -172,6 +174,27 @@ Hue/Saturation. Установка:
 ```bash
 .venv/bin/python scripts/install_freqautosplit_action.py --atn actions/eyesteeth.atn
 ```
+
+### Watermark & Resize (single)
+
+```bash
+# GUI: обработать текущий документ; результат — новый документ, не сохраняется
+.venv/bin/python scripts/waterres_single_poc.py --size 1920
+
+# headless-проверка
+PHOTOCRAFT_CLI=/path/to/photocraft-cli .venv/bin/python scripts/waterres_single_poc.py \
+  --auto --input /path/to/photo.jpg --out out/waterres-single
+```
+
+Скрипт делает merged-копию (`image.duplicate {mergedOnly: true}`), оригинал со слоями
+не трогает. В копии: Lanczos resize по длинной стороне, Unsharp Mask r2.5/20/0,
+High Pass 1 + Linear Light 40%, watermark `watermark_bw_100.png` (Down-Left 20/20,
+opacity 25%, Difference, без масштабирования). Флаги: `--pre-blur`,
+`--no-final-contrast`, `--no-watermark`, `--no-resize`.
+
+Чистый `.atn` для resize невозможен: `image.imageSize` не экспортируется в PhotoCraft
+0.10.0. Детали и repro — `atn-issue-imageSize.txt`. Результаты headless:
+`out/waterres-single/<asset>/{result.png,manifest.json}`.
 
 ## Проверки
 
