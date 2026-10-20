@@ -7,13 +7,14 @@ GIMP-эталон и попиксельное сравнение. MIDI-прос�
 
 ## Состояние репозитория
 
-- Git-репозитория нет (`.git` отсутствует), CI нет. Без явной просьбы не делать
-  `git init`, коммиты и push.
+- Git-репозиторий есть, ветка `main`; remote не настроен, CI нет. Коммиты — напрямую
+  в `main` (ветка/PR — для рискованных изменений), push — только по явной просьбе.
 - `actions/` — готовые артефакты, `out/` — результаты прогонов (gitignored). Не править
   вручную; перегенерировать скриптами.
 - Полный цикл требует внешних PhotoCraft 0.10 (GUI+control или `photocraft-cli`) и
   GIMP 3.2 с плагином `SHSMAD_Process_freqautosplit`; в репозитории их нет.
-- Тесты — только чистые функции (numpy/Pillow): GUI, CLI и GIMP для них не нужны.
+- Unit-тесты — чистые функции (numpy/Pillow); integration-тест конвертера требует явный
+  `PHOTOCRAFT_CLI` и иначе пропускается. GIMP для тестов не нужен.
 
 ## Структура
 
@@ -27,6 +28,7 @@ GIMP-эталон и попиксельное сравнение. MIDI-прос�
 - `scripts/gimp_freqsplit_reference.py`, `scripts/run_gimp_reference.sh` — эталон GIMP.
 - `scripts/compare_images.py` — RMSE/PSNR/max, diff-PNG, `report.{md,json}`.
 - `tests/test_poc_helpers.py` — юнит-тесты слоёв/метрик.
+- `tests/test_integration_convert.py` — opt-in roundtrip `.atn` (нужен `PHOTOCRAFT_CLI`).
 
 ## Команды
 
@@ -34,10 +36,14 @@ GIMP-эталон и попиксельное сравнение. MIDI-прос�
 pdm install
 pdm run lint        # ruff check src tests scripts
 pdm run typecheck   # ty check
-pdm run test        # pytest, ~0.1 c
+pdm run test        # pytest, ~0.1 c (integration skip без PHOTOCRAFT_CLI)
+pdm run check       # lint + typecheck + test
 
 # один тест
 pdm run test tests/test_poc_helpers.py::test_metrics_identical_and_full_difference
+
+# integration-тест конвертера (roundtrip .atn)
+PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py
 
 # скрипты: PYTHONPATH не нужен — скрипт сам вставляет src в sys.path
 .venv/bin/python scripts/freqautosplit_poc.py --input <file>

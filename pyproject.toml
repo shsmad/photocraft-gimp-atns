@@ -27,10 +27,14 @@ _.env_file = ".env"
 lint = "ruff check src tests scripts"
 typecheck = "ty check"
 test = "pytest"
+check = { composite = ["lint", "typecheck", "test"] }
 
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]
+markers = [
+    "integration: требует явный PHOTOCRAFT_CLI",
+]
 
 [tool.ruff]
 target-version = "py314"

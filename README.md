@@ -101,10 +101,16 @@ PYTHONPATH=src .venv/bin/python scripts/install_freqautosplit_action.py --json
 ## Проверки
 
 ```bash
-pdm run lint
-pdm run typecheck
-pdm run test
+pdm run check   # lint + typecheck + test
 ```
+
+Integration-тест конвертера запускается только при явном `PHOTOCRAFT_CLI`:
+
+```bash
+PHOTOCRAFT_CLI=/path/to/photocraft-cli pdm run test
+```
+
+Без переменной он пропускается. CI в проекте нет.
 
 ## Лицензия
 

@@ -15,7 +15,8 @@ MIDI-проекта в этот репозиторий.
 - переносимый Action и экспорт `.atn` (`scripts/make_freqautosplit_action.py`);
 - установка Action в GUI (`scripts/install_freqautosplit_action.py`);
 - конвертер Action JSON ↔ `.atn` через headless MCP (`scripts/convert_action.py`,
-  roundtrip текущего `.atn` байт-в-байт).
+  roundtrip текущего `.atn` байт-в-байт);
+- opt-in integration-тест конвертера и `pdm run check`.
 
 Артефакты:
 
@@ -25,8 +26,8 @@ MIDI-проекта в этот репозиторий.
   (`SHSMAD / Frequency Split (GB+HP)`, 24 шага, диалоги `[2, 8]`);
 - отчёты: `out/freqsplit-poc/<asset>/report.{md,json}` + `diff/*.png`.
 
-Git: репозиторий инициализирован (`main`), сделан baseline-коммит. Remote ещё не
-настроен: push — только по явной команде. CI не планируется. MIDI-проект содержит
+Git: репозиторий инициализирован (`main`), два коммита — baseline и hardening. Remote
+ещё не настроен: push — только по явной команде. CI не планируется. MIDI-проект содержит
 незакоммиченные обновления знаний под 0.10 (см. ниже).
 
 ## Ключевые решения и находки
@@ -127,7 +128,8 @@ PYTHONPATH=src .venv/bin/python scripts/install_freqautosplit_action.py --atn
 .venv/bin/python scripts/convert_action.py unpack actions/freqautosplit.atn \
   --out actions/freqautosplit.action.json --force
 
-pdm run lint / typecheck / test
+pdm run check   # lint + typecheck + test
+PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py
 ```
 
 ## Результаты (radius 10, native vs GIMP)
@@ -149,6 +151,8 @@ pdm run lint / typecheck / test
 - Клиентский stdout-лимит поднят до 4 МиБ (большие `command_list`).
 - `pack` теряет шаги без Photoshop-эквивалента (`locks.pixels`) — это ожидаемо;
   `unpack` восстанавливает `steps`, `dialogs`, `disabled`, `color`.
+- Integration-тест конвертера запускается только при явном `PHOTOCRAFT_CLI`; обычный
+  `pdm run test` его пропускает.
 - Не логировать токен; `.env` не коммитить.
 
 ## MIDI-проект `../photocraft-midi`
@@ -167,4 +171,4 @@ pdm run lint / typecheck / test
 - Создать публичный `shsmad/photocraft-gimp-atns` и запушить `main` по явной команде.
 - Портировать `addskinnoise` как следующий Action; затем `eyesteeth`.
 - Внешний скрипт rembg (план из сессии: экспорт слоя → `:7000` → маска в слой).
-- CI не планируется; локальный гейт — `pdm run check` после hardening-коммита.
+- CI не планируется; локальный гейт — `pdm run check`.
