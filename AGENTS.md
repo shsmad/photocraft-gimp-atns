@@ -29,13 +29,17 @@ GIMP-эталон и попиксельное сравнение. MIDI-прос�
   Smart Object + smart filters, auto/интерактив.
 - `scripts/make_addskinnoise_actions.py` — запись/проверка Add Skin Pores/Texture Actions,
   экспорт `.atn` и native JSON.
+- `scripts/make_eyesteeth_action.py` — Eyes & Teeth Action (группа + adjustment layers),
+  экспорт `.atn`.
 - `scripts/gimp_freqsplit_reference.py`, `scripts/run_gimp_reference.sh` — эталон GIMP.
 - `scripts/compare_images.py` — RMSE/PSNR/max, diff-PNG, `report.{md,json}`.
 - `tests/test_poc_helpers.py` — юнит-тесты слоёв/метрик.
 - `tests/test_addskinnoise_helpers.py` — юнит-тесты режимов/значений PoC.
 - `tests/test_addskinnoise_actions_helpers.py` — юнит-тесты шагов/Action-спеков.
+- `tests/test_eyesteeth_helpers.py` — юнит-тесты шагов/группы Eyes & Teeth.
 - `tests/test_integration_convert.py` — opt-in roundtrip `.atn` (нужен `PHOTOCRAFT_CLI`).
 - `tests/test_integration_addskinnoise_actions.py` — opt-in генерация и playback Actions.
+- `tests/test_integration_eyesteeth_action.py` — opt-in генерация/playback Eyes & Teeth.
 
 ## Команды
 
@@ -51,10 +55,13 @@ pdm run test tests/test_poc_helpers.py::test_metrics_identical_and_full_differen
 
 # integration-тесты (roundtrip .atn, генерация/playback Add Skin Actions)
 PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py \
-  tests/test_integration_addskinnoise_actions.py
+  tests/test_integration_addskinnoise_actions.py tests/test_integration_eyesteeth_action.py
 
 # Add Skin Actions: regenerate actions/addskin-*.atn + native JSON
 .venv/bin/python scripts/make_addskinnoise_actions.py
+
+# Eyes & Teeth Action: regenerate actions/eyesteeth.{atn,action.json}
+.venv/bin/python scripts/make_eyesteeth_action.py
 
 # скрипты: PYTHONPATH не нужен — скрипт сам вставляет src в sys.path
 .venv/bin/python scripts/freqautosplit_poc.py --input <file>
@@ -142,6 +149,17 @@ export PHOTOCRAFT_CLI=$PWD/squashfs-root/usr/bin/photocraft-cli
 - Когда Emboss появится в `.atn`: в `make_addskinnoise_actions.py` переключить
   `PORE_NAME` на `pore_steps("emboss")`, обновить `expected_filters`, перегенерировать
   `actions/addskin-*.atn`; native JSON оставить для старых версий PhotoCraft.
+
+## Eyes & Teeth (Action)
+
+- `scripts/make_eyesteeth_action.py` → `actions/eyesteeth.atn` (18 шагов, диалоги
+  `[2, 6, 10]`) + JSON. Группа `Глаза и зубы`, adjustment layers `Белки`, `Зубы`,
+  `Радужка` (Hue/Saturation: −70/+60, −70/+60, +35/+10).
+- Чёрные маски: `select.all → select.inverse → layer.newAdjustmentLayer.hueSaturation`.
+  Это экспортируется в `.atn`; `layer.layerMask.hideAll` — нет. Группировка —
+  `layer.groupLayers`.
+- После Play эффект проявляется белой кистью. Метод `Desaturate + Brightness` не
+  портирован; используется Hue/Saturation.
 
 ## GIMP-рецепты → PhotoCraft (только при портировании)
 

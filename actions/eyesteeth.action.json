@@ -1,0 +1,128 @@
+{
+  "action": {
+    "color": "",
+    "dialogs": [
+      2,
+      6,
+      10
+    ],
+    "disabled": [],
+    "name": "Eyes & Teeth",
+    "set": "SHSMAD",
+    "steps": [
+      [
+        "select.all",
+        {}
+      ],
+      [
+        "select.inverse",
+        {}
+      ],
+      [
+        "layer.newAdjustmentLayer.hueSaturation",
+        {
+          "hue": 0,
+          "lightness": 60,
+          "saturation": -70
+        }
+      ],
+      [
+        "layer.setProps",
+        {
+          "name": "Белки"
+        }
+      ],
+      [
+        "select.all",
+        {}
+      ],
+      [
+        "select.inverse",
+        {}
+      ],
+      [
+        "layer.newAdjustmentLayer.hueSaturation",
+        {
+          "hue": 0,
+          "lightness": 60,
+          "saturation": -70
+        }
+      ],
+      [
+        "layer.setProps",
+        {
+          "name": "Зубы"
+        }
+      ],
+      [
+        "select.all",
+        {}
+      ],
+      [
+        "select.inverse",
+        {}
+      ],
+      [
+        "layer.newAdjustmentLayer.hueSaturation",
+        {
+          "hue": 0,
+          "lightness": 10,
+          "saturation": 35
+        }
+      ],
+      [
+        "layer.setProps",
+        {
+          "name": "Радужка"
+        }
+      ],
+      [
+        "layer.select",
+        {
+          "layer": "Белки"
+        }
+      ],
+      [
+        "layer.select",
+        {
+          "layer": "Зубы",
+          "mode": "add"
+        }
+      ],
+      [
+        "layer.select",
+        {
+          "layer": "Радужка",
+          "mode": "add"
+        }
+      ],
+      [
+        "layer.groupLayers",
+        {}
+      ],
+      [
+        "layer.setProps",
+        {
+          "name": "Глаза и зубы"
+        }
+      ],
+      [
+        "select.deselect",
+        {}
+      ]
+    ]
+  },
+  "stopped": {
+    "action": "Eyes & Teeth",
+    "steps": 18
+  },
+  "saved": {
+    "actions": [
+      "Eyes & Teeth"
+    ],
+    "bytes": 2699,
+    "set": "SHSMAD",
+    "skipped": [],
+    "steps": 18
+  }
+}

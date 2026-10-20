@@ -18,7 +18,8 @@ MIDI-проекта в этот репозиторий.
   roundtrip текущего `.atn` байт-в-байт);
 - opt-in integration-тест конвертера и `pdm run check`;
 - недеструктивный PoC Add Skin Noise в режимах `pore`/`texture` (`scripts/addskinnoise_poc.py`);
-- Add Skin Pores/Texture Actions и `.atn` (`scripts/make_addskinnoise_actions.py`).
+- Add Skin Pores/Texture Actions и `.atn` (`scripts/make_addskinnoise_actions.py`);
+- Eyes & Teeth Action с группой и чёрными масками (`scripts/make_eyesteeth_action.py`).
 
 Артефакты:
 
@@ -27,6 +28,8 @@ MIDI-проекта в этот репозиторий.
 - `actions/addskin-pores.atn` — 6 шагов, High Pass 0.5 вместо Emboss, диалоги `[2, 3, 4]`;
 - `actions/addskin-texture.atn` — 8 шагов, диалоги `[3, 4]`;
 - `actions/addskin-pores-emboss.action.json` — native Action с Emboss (без `.atn`);
+- `actions/eyesteeth.atn` — 18 шагов, диалоги `[2, 6, 10]`, группа `Глаза и зубы`;
+- `actions/eyesteeth.action.json` — журнал Eyes & Teeth;
 - Action уже установлен в `~/.config/photocraft/Presets/actions.json`
   (`SHSMAD / Frequency Split (GB+HP)`, 24 шага, диалоги `[2, 8]`);
 - отчёты: `out/freqsplit-poc/<asset>/report.{md,json}` + `diff/*.png`.
@@ -71,6 +74,10 @@ Git: ветка `main`, remote `origin` настроен. Push — только 
   `pore_steps("highpass")` на `pore_steps("emboss")` для `PORE_NAME`, обновить
   `expected_filters` и перегенерировать `actions/addskin-pores.atn`; native JSON
   оставить для совместимости со старыми PhotoCraft.
+- **Eyes & Teeth**: чёрные маски создаются через `select.all → select.inverse` перед
+  adjustment layer — этот путь экспортируется в `.atn`, в отличие от `layerMask.hideAll`.
+  Группа собирается `layer.groupLayers`; после Play маски проявляются белой кистью.
+  Метод `Desaturate + Brightness` пока не портирован.
 
 ## Окружение (факты)
 
@@ -153,8 +160,12 @@ PHOTOCRAFT_CLI=<cli> .venv/bin/python scripts/addskinnoise_poc.py --input <file>
 # Add Skin Actions
 .venv/bin/python scripts/make_addskinnoise_actions.py
 
+# Eyes & Teeth Action
+.venv/bin/python scripts/make_eyesteeth_action.py
+
 pdm run check   # lint + typecheck + test
-PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py
+PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py \
+  tests/test_integration_addskinnoise_actions.py tests/test_integration_eyesteeth_action.py
 ```
 
 ## Результаты (radius 10, native vs GIMP)
@@ -197,9 +208,9 @@ PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py
 
 ## Следующие шаги
 
-- Визуально проверить Add Skin Actions в GUI; при необходимости — native Emboss.
+- Визуально проверить Add Skin Actions и Eyes & Teeth в GUI; при необходимости — native Emboss.
 - Когда Emboss появится в `.atn`: перегенерировать `addskin-pores.atn` с настоящим
   Emboss (см. раздел выше) и обновить issue/документацию.
-- Портировать `eyesteeth` как следующий Action.
+- Следующие кандидаты: `skinsmooth`, затем `skintone`/`waterresbatch`.
 - Внешний скрипт rembg (план из сессии: экспорт слоя → `:7000` → маска в слой).
 - CI не планируется; локальный гейт — `pdm run check`.

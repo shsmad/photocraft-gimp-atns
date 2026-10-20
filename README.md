@@ -20,6 +20,8 @@
   (алгоритм Google) и `texture` (рецепт из `gimp.md`), оба на Smart Object.
 - `scripts/make_addskinnoise_actions.py` — записывает Add Skin Pores/Texture Actions,
   проверяет playback и экспортирует `.atn`.
+- `scripts/make_eyesteeth_action.py` — записывает Eyes & Teeth Action с группой и
+  adjustment layers, экспортирует `.atn`.
 - `scripts/gimp_freqsplit_reference.py` + `scripts/run_gimp_reference.sh` — эталон
   реальным GIMP-плагином `plug-in-shsmad-process-freqautosplit`.
 - `scripts/compare_images.py` — RMSE/PSNR/max/доля `|Δ|>2/255`, diff-PNG и отчёты.
@@ -148,6 +150,27 @@ PYTHONPATH=src .venv/bin/python scripts/install_freqautosplit_action.py --json
 .venv/bin/python scripts/install_freqautosplit_action.py --atn actions/addskin-pores.atn
 .venv/bin/python scripts/install_freqautosplit_action.py --atn actions/addskin-texture.atn
 .venv/bin/python scripts/install_freqautosplit_action.py --json actions/addskin-pores-emboss.action.json
+```
+
+### Eyes & Teeth Action
+
+```bash
+.venv/bin/python scripts/make_eyesteeth_action.py
+```
+
+Создаёт `actions/eyesteeth.atn` (18 шагов, диалоги `[2, 6, 10]`) и
+`actions/eyesteeth.action.json`.
+
+Внутри — группа `Глаза и зубы` с тремя adjustment layers: `Белки`, `Зубы`, `Радужка`
+(Hue/Saturation, значения как в GIMP-плагине). Чёрные маски создаются связкой
+`select.all → select.inverse → adjustment layer`; это, в отличие от `layerMask.hideAll`,
+полностью переживает `.atn`. После Play проявите эффект белой кистью по маскам.
+
+Метод плагина `Desaturate + Brightness` пока не портирован — используется
+Hue/Saturation. Установка:
+
+```bash
+.venv/bin/python scripts/install_freqautosplit_action.py --atn actions/eyesteeth.atn
 ```
 
 ## Проверки
