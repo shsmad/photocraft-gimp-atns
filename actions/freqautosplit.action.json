@@ -1,0 +1,191 @@
+{
+  "action": {
+    "color": "",
+    "dialogs": [
+      2,
+      8
+    ],
+    "disabled": [],
+    "name": "Frequency Split (GB+HP)",
+    "set": "SHSMAD",
+    "steps": [
+      [
+        "layer.duplicate",
+        {
+          "name": "freq-src"
+        }
+      ],
+      [
+        "layer.duplicate",
+        {
+          "layer": "freq-src",
+          "name": "НЧ (GB 10.0) Оригинал"
+        }
+      ],
+      [
+        "filter.blur.gaussianBlur",
+        {
+          "radius": 10.0
+        }
+      ],
+      [
+        "layer.duplicate",
+        {
+          "layer": "НЧ (GB 10.0) Оригинал",
+          "name": "НЧ (GB 10.0)"
+        }
+      ],
+      [
+        "layer.duplicate",
+        {
+          "layer": "freq-src",
+          "name": "ВЧ"
+        }
+      ],
+      [
+        "layer.select",
+        {
+          "layer": "ВЧ"
+        }
+      ],
+      [
+        "layer.arrange.bringForward",
+        {}
+      ],
+      [
+        "layer.arrange.bringForward",
+        {}
+      ],
+      [
+        "filter.other.highPass",
+        {
+          "radius": 10.0
+        }
+      ],
+      [
+        "layer.setProps",
+        {
+          "blend": "Linear Light",
+          "layer": "ВЧ",
+          "opacity": 0.5
+        }
+      ],
+      [
+        "layer.select",
+        {
+          "layer": "ВЧ"
+        }
+      ],
+      [
+        "layer.new.layer",
+        {
+          "mode": "Soft Light",
+          "name": "DnB Face",
+          "opacity": 0.5
+        }
+      ],
+      [
+        "layer.new.layer",
+        {
+          "mode": "Soft Light",
+          "name": "DnB Body",
+          "opacity": 0.5
+        }
+      ],
+      [
+        "layer.new.layer",
+        {
+          "mode": "Soft Light",
+          "name": "DnB Global",
+          "opacity": 0.5
+        }
+      ],
+      [
+        "layer.delete",
+        {
+          "layer": "freq-src"
+        }
+      ],
+      [
+        "layer.select",
+        {
+          "layer": "НЧ (GB 10.0) Оригинал",
+          "mode": "add"
+        }
+      ],
+      [
+        "layer.select",
+        {
+          "layer": "НЧ (GB 10.0)",
+          "mode": "add"
+        }
+      ],
+      [
+        "layer.select",
+        {
+          "layer": "ВЧ",
+          "mode": "add"
+        }
+      ],
+      [
+        "layer.select",
+        {
+          "layer": "DnB Face",
+          "mode": "add"
+        }
+      ],
+      [
+        "layer.select",
+        {
+          "layer": "DnB Body",
+          "mode": "add"
+        }
+      ],
+      [
+        "layer.select",
+        {
+          "layer": "DnB Global",
+          "mode": "add"
+        }
+      ],
+      [
+        "layer.groupLayers",
+        {}
+      ],
+      [
+        "layer.setProps",
+        {
+          "name": "Ретушь"
+        }
+      ],
+      [
+        "layer.setProps",
+        {
+          "layer": "НЧ (GB 10.0) Оригинал",
+          "locks": {
+            "pixels": true
+          }
+        }
+      ]
+    ]
+  },
+  "stopped": {
+    "action": "Frequency Split (GB+HP)",
+    "steps": 24
+  },
+  "saved": {
+    "actions": [
+      "Frequency Split (GB+HP)"
+    ],
+    "bytes": 3543,
+    "set": "SHSMAD",
+    "skipped": [
+      {
+        "action": "Frequency Split (GB+HP)",
+        "id": "layer.setProps",
+        "step": 23
+      }
+    ],
+    "steps": 23
+  }
+}

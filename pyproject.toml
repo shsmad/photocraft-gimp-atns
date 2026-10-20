@@ -1,0 +1,81 @@
+[project]
+name = "photocraft-gimp-atns"
+version = "0.1.0"
+description = "PhotoCraft automation: freqautosplit Action/.atn, GIMP reference and image diff"
+authors = [
+    {name = "shsmad", email = "shsmad@gmail.com"},
+]
+dependencies = [
+    "python-dotenv>=1.0",
+    "numpy>=2.5.4",
+    "pillow>=13.0.0",
+]
+requires-python = ">=3.14"
+
+[tool.pdm]
+distribution = false
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.11.4",
+    "ty>=0.0.43",
+]
+
+[tool.pdm.scripts]
+_.env_file = ".env"
+lint = "ruff check src tests scripts"
+typecheck = "ty check"
+test = "pytest"
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py314"
+exclude = [
+    ".tox",
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+line-length = 120
+
+[tool.ruff.lint]
+ignore = [
+    "A003",
+    "D107",
+    "D202",
+    "D203",
+    "D401",
+]
+select = [
+    "A", # builtins
+    "B", # bugbear
+    "C4", # comprehensions
+    "COM", # commas
+    # "D",   # pydocstyle
+    "E", # pycodestyle
+    "F", # pyflakes
+    "I", # isort
+    "PT", # pytest-style
+    "S", # bandit
+    "SIM", # simplify
+    "T1", # debugger
+    "T2", # print
+    "UP", # pyupgrade
+    "W", # pycodestyle
+]
+unfixable = ["B"]
+
+[tool.ruff.lint.isort]
+lines-between-types = 1
+known-first-party = ["photocraft_atns"]
+known-local-folder = ["src"]
+force-single-line = false
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "PT011"]
