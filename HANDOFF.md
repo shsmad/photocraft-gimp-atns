@@ -16,19 +16,23 @@ MIDI-проекта в этот репозиторий.
 - установка Action в GUI (`scripts/install_freqautosplit_action.py`);
 - конвертер Action JSON ↔ `.atn` через headless MCP (`scripts/convert_action.py`,
   roundtrip текущего `.atn` байт-в-байт);
-- opt-in integration-тест конвертера и `pdm run check`.
+- opt-in integration-тест конвертера и `pdm run check`;
+- недеструктивный PoC Add Skin Noise в режимах `pore`/`texture` (`scripts/addskinnoise_poc.py`);
+- Add Skin Pores/Texture Actions и `.atn` (`scripts/make_addskinnoise_actions.py`).
 
 Артефакты:
 
 - `actions/freqautosplit.atn` — 23 шага (без `locks.pixels`), диалоги `[2, 8]`;
 - `actions/freqautosplit.action.json` — 24 шага (с `locks.pixels`), журнал `actions.get`;
+- `actions/addskin-pores.atn` — 6 шагов, High Pass 0.5 вместо Emboss, диалоги `[2, 3, 4]`;
+- `actions/addskin-texture.atn` — 8 шагов, диалоги `[3, 4]`;
+- `actions/addskin-pores-emboss.action.json` — native Action с Emboss (без `.atn`);
 - Action уже установлен в `~/.config/photocraft/Presets/actions.json`
   (`SHSMAD / Frequency Split (GB+HP)`, 24 шага, диалоги `[2, 8]`);
 - отчёты: `out/freqsplit-poc/<asset>/report.{md,json}` + `diff/*.png`.
 
-Git: репозиторий инициализирован (`main`), два коммита — baseline и hardening. Remote
-ещё не настроен: push — только по явной команде. CI не планируется. MIDI-проект содержит
-незакоммиченные обновления знаний под 0.10 (см. ниже).
+Git: ветка `main`, remote `origin` настроен. Push — только по явной команде. CI не
+планируется. MIDI-проект содержит незакоммиченные обновления знаний под 0.10 (см. ниже).
 
 ## Ключевые решения и находки
 
@@ -54,6 +58,19 @@ Git: репозиторий инициализирован (`main`), два ко
   headless PhotoCraft (`actions.load/get/insert/save`), а не локальным парсером.
   `pack` пропускает шаги без Photoshop-эквивалента (`locks.pixels`) и печатает `skipped`;
   `unpack` даёт JSON, совместимый с `install_freqautosplit_action.py --json`.
+- **Add Skin Noise**: плагин в `~/.config/GIMP/3.2/plug-ins/SHSMAD_Process/plugins/`
+  разрушающий (Normal 100 %) и содержит баг с blur; поэтому PoC недеструктивный:
+  `pore` — дубль → Smart Object → шум 3 → Emboss → blur 0.3 → Overlay 0.5;
+  `texture` — серый слой → Smart Object → шум 12 → median 2 → шум 6 → median 1.
+  Фильтры остаются smart filters; `--mask black|skin`.
+- **Add Skin Actions**: `filter.stylize.emboss` не сериализуется в `.atn`, поэтому
+  `addskin-pores.atn` использует High Pass 0.5 (визуально близко), а точный Emboss
+  остаётся в `addskin-pores-emboss.action.json`. `layerMask.*` в `.atn` тоже теряются.
+  Детали и repro — `atn-issue.txt`.
+- **Когда Emboss появится в `.atn`**: в `make_addskinnoise_actions.py` заменить
+  `pore_steps("highpass")` на `pore_steps("emboss")` для `PORE_NAME`, обновить
+  `expected_filters` и перегенерировать `actions/addskin-pores.atn`; native JSON
+  оставить для совместимости со старыми PhotoCraft.
 
 ## Окружение (факты)
 
@@ -128,6 +145,14 @@ PYTHONPATH=src .venv/bin/python scripts/install_freqautosplit_action.py --atn
 .venv/bin/python scripts/convert_action.py unpack actions/freqautosplit.atn \
   --out actions/freqautosplit.action.json --force
 
+# Add Skin Noise PoC (недеструктивный, Smart Object)
+.venv/bin/python scripts/addskinnoise_poc.py --input <file> --mode pore
+.venv/bin/python scripts/addskinnoise_poc.py --input <file> --mode pore --mask black
+PHOTOCRAFT_CLI=<cli> .venv/bin/python scripts/addskinnoise_poc.py --input <file> --mode texture --auto
+
+# Add Skin Actions
+.venv/bin/python scripts/make_addskinnoise_actions.py
+
 pdm run check   # lint + typecheck + test
 PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py
 ```
@@ -153,6 +178,10 @@ PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py
   `unpack` восстанавливает `steps`, `dialogs`, `disabled`, `color`.
 - Integration-тест конвертера запускается только при явном `PHOTOCRAFT_CLI`; обычный
   `pdm run test` его пропускает.
+- Add Skin Noise: Actions записаны и roundtrip проверен. Осталось визуально проверить
+  в GUI загруженные `addskin-pores.atn` / `addskin-texture.atn` и native Emboss.
+  Маски в `.atn` не экспортируются — добавлять вручную; при необходимости ставить
+  native Action из JSON.
 - Не логировать токен; `.env` не коммитить.
 
 ## MIDI-проект `../photocraft-midi`
@@ -168,7 +197,9 @@ PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py
 
 ## Следующие шаги
 
-- Создать публичный `shsmad/photocraft-gimp-atns` и запушить `main` по явной команде.
-- Портировать `addskinnoise` как следующий Action; затем `eyesteeth`.
+- Визуально проверить Add Skin Actions в GUI; при необходимости — native Emboss.
+- Когда Emboss появится в `.atn`: перегенерировать `addskin-pores.atn` с настоящим
+  Emboss (см. раздел выше) и обновить issue/документацию.
+- Портировать `eyesteeth` как следующий Action.
 - Внешний скрипт rembg (план из сессии: экспорт слоя → `:7000` → маска в слой).
 - CI не планируется; локальный гейт — `pdm run check`.

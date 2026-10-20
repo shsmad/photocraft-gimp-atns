@@ -16,6 +16,10 @@
   (`.atn` или JSON).
 - `scripts/convert_action.py` — конвертирует Action JSON ↔ `.atn` через headless
   PhotoCraft (без GUI).
+- `scripts/addskinnoise_poc.py` — недеструктивный PoC Add Skin Noise: `pore`
+  (алгоритм Google) и `texture` (рецепт из `gimp.md`), оба на Smart Object.
+- `scripts/make_addskinnoise_actions.py` — записывает Add Skin Pores/Texture Actions,
+  проверяет playback и экспортирует `.atn`.
 - `scripts/gimp_freqsplit_reference.py` + `scripts/run_gimp_reference.sh` — эталон
   реальным GIMP-плагином `plug-in-shsmad-process-freqautosplit`.
 - `scripts/compare_images.py` — RMSE/PSNR/max/доля `|Δ|>2/255`, diff-PNG и отчёты.
@@ -62,6 +66,23 @@ scripts/run_gimp_reference.sh /path/to/photo.jpg out/freqsplit-poc/<asset>/gimp 
   --run-dir out/freqsplit-poc/<asset> --input /path/to/photo.jpg
 ```
 
+## Add Skin Noise PoC
+
+```bash
+# GUI: откройте изображение и выберите один пиксельный слой
+.venv/bin/python scripts/addskinnoise_poc.py --input /path/to/photo.jpg --mode pore
+
+# headless: текстура по рецепту gimp.md
+PHOTOCRAFT_CLI=/path/to/photocraft-cli .venv/bin/python scripts/addskinnoise_poc.py \
+  --input /path/to/photo.jpg --mode texture --auto
+```
+
+Оба режима создают Smart Object; фильтры остаются редактируемыми. `--mask black|skin`
+добавляет маску для локального проявления.
+
+Результаты: `out/addskinnoise-poc/<asset>/<mode>/native/`. Подробности —
+`scripts/addskinnoise_poc.md`.
+
 ## Action и `.atn`
 
 ```bash
@@ -97,6 +118,37 @@ PYTHONPATH=src .venv/bin/python scripts/install_freqautosplit_action.py --json
 
 `pack` пропускает шаги без Photoshop-эквивалента (`locks.pixels`) и печатает их;
 `unpack` даёт JSON, совместимый с `install_freqautosplit_action.py --json`.
+
+### Add Skin Noise Actions
+
+```bash
+.venv/bin/python scripts/make_addskinnoise_actions.py
+```
+
+Артефакты:
+
+- `actions/addskin-pores.atn` — `Add Skin Pores`: Smart Object, шум 3, High Pass 0.5,
+  blur 0.3, Overlay 0.5. High Pass заменяет Emboss, который PhotoCraft не пишет в `.atn`.
+- `actions/addskin-texture.atn` — `Add Skin Texture`: серый слой, Smart Object, шум 12 →
+  median 2 → шум 6 → median 1, Overlay.
+- `actions/addskin-pores-emboss.action.json` — native Action с настоящим Emboss
+  (только PhotoCraft; `.atn` этот шаг не поддерживает).
+
+Маски в `.atn` не экспортируются (`layerMask.*` пропускается); добавляйте их вручную
+или используйте native Action из JSON.
+
+Когда PhotoCraft начнёт сериализовать `filter.stylize.emboss` в `.atn`, `addskin-pores.atn`
+нужно перегенерировать с настоящим Emboss: в `make_addskinnoise_actions.py` заменить
+`pore_steps("highpass")` на `pore_steps("emboss")` для `PORE_NAME` и обновить
+`expected_filters`. Native JSON после этого нужен только для старых версий PhotoCraft.
+
+Установка в GUI:
+
+```bash
+.venv/bin/python scripts/install_freqautosplit_action.py --atn actions/addskin-pores.atn
+.venv/bin/python scripts/install_freqautosplit_action.py --atn actions/addskin-texture.atn
+.venv/bin/python scripts/install_freqautosplit_action.py --json actions/addskin-pores-emboss.action.json
+```
 
 ## Проверки
 

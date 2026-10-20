@@ -1,0 +1,84 @@
+{
+  "action": {
+    "color": "",
+    "dialogs": [
+      3,
+      4
+    ],
+    "disabled": [],
+    "name": "Add Skin Texture",
+    "set": "SHSMAD",
+    "steps": [
+      [
+        "layer.new.layer",
+        {
+          "mode": "Overlay",
+          "name": "Кожа: текстура"
+        }
+      ],
+      [
+        "edit.fill",
+        {
+          "contents": "gray"
+        }
+      ],
+      [
+        "layer.smartObjects.convertToSmartObject",
+        {
+          "layer": "Кожа: текстура"
+        }
+      ],
+      [
+        "filter.noise.addNoise",
+        {
+          "amount": 12,
+          "distribution": "uniform",
+          "monochromatic": true,
+          "seed": 0
+        }
+      ],
+      [
+        "filter.noise.median",
+        {
+          "radius": 2
+        }
+      ],
+      [
+        "filter.noise.addNoise",
+        {
+          "amount": 6,
+          "distribution": "uniform",
+          "monochromatic": true,
+          "seed": 0
+        }
+      ],
+      [
+        "filter.noise.median",
+        {
+          "radius": 1
+        }
+      ],
+      [
+        "layer.setProps",
+        {
+          "blend": "Overlay",
+          "layer": "Кожа: текстура",
+          "opacity": 1.0
+        }
+      ]
+    ]
+  },
+  "stopped": {
+    "action": "Add Skin Texture",
+    "steps": 8
+  },
+  "saved": {
+    "actions": [
+      "Add Skin Texture"
+    ],
+    "bytes": 1016,
+    "set": "SHSMAD",
+    "skipped": [],
+    "steps": 8
+  }
+}

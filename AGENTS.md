@@ -7,14 +7,14 @@ GIMP-эталон и попиксельное сравнение. MIDI-прос�
 
 ## Состояние репозитория
 
-- Git-репозиторий есть, ветка `main`; remote не настроен, CI нет. Коммиты — напрямую
-  в `main` (ветка/PR — для рискованных изменений), push — только по явной просьбе.
+- Git-репозиторий есть, ветка `main`, remote `origin` настроен, CI нет. Коммиты —
+  напрямую в `main` (ветка/PR — для рискованных изменений), push — только по явной просьбе.
 - `actions/` — готовые артефакты, `out/` — результаты прогонов (gitignored). Не править
   вручную; перегенерировать скриптами.
 - Полный цикл требует внешних PhotoCraft 0.10 (GUI+control или `photocraft-cli`) и
   GIMP 3.2 с плагином `SHSMAD_Process_freqautosplit`; в репозитории их нет.
-- Unit-тесты — чистые функции (numpy/Pillow); integration-тест конвертера требует явный
-  `PHOTOCRAFT_CLI` и иначе пропускается. GIMP для тестов не нужен.
+- Unit-тесты — чистые функции (numpy/Pillow); integration-тесты конвертера и Add Skin
+  Actions требуют явный `PHOTOCRAFT_CLI` и иначе пропускаются. GIMP для тестов не нужен.
 
 ## Структура
 
@@ -25,10 +25,17 @@ GIMP-эталон и попиксельное сравнение. MIDI-прос�
 - `scripts/make_freqautosplit_action.py` — запись Action, проверка playback, экспорт `.atn`.
 - `scripts/install_freqautosplit_action.py` — установка Action в запущенный GUI (`--atn`/`--json`).
 - `scripts/convert_action.py` — headless-конвертер Action JSON ↔ `.atn` (`pack`/`unpack`).
+- `scripts/addskinnoise_poc.py` — недеструктивный PoC Add Skin Noise (`pore`/`texture`),
+  Smart Object + smart filters, auto/интерактив.
+- `scripts/make_addskinnoise_actions.py` — запись/проверка Add Skin Pores/Texture Actions,
+  экспорт `.atn` и native JSON.
 - `scripts/gimp_freqsplit_reference.py`, `scripts/run_gimp_reference.sh` — эталон GIMP.
 - `scripts/compare_images.py` — RMSE/PSNR/max, diff-PNG, `report.{md,json}`.
 - `tests/test_poc_helpers.py` — юнит-тесты слоёв/метрик.
+- `tests/test_addskinnoise_helpers.py` — юнит-тесты режимов/значений PoC.
+- `tests/test_addskinnoise_actions_helpers.py` — юнит-тесты шагов/Action-спеков.
 - `tests/test_integration_convert.py` — opt-in roundtrip `.atn` (нужен `PHOTOCRAFT_CLI`).
+- `tests/test_integration_addskinnoise_actions.py` — opt-in генерация и playback Actions.
 
 ## Команды
 
@@ -42,8 +49,12 @@ pdm run check       # lint + typecheck + test
 # один тест
 pdm run test tests/test_poc_helpers.py::test_metrics_identical_and_full_difference
 
-# integration-тест конвертера (roundtrip .atn)
-PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py
+# integration-тесты (roundtrip .atn, генерация/playback Add Skin Actions)
+PHOTOCRAFT_CLI=<cli> pdm run test tests/test_integration_convert.py \
+  tests/test_integration_addskinnoise_actions.py
+
+# Add Skin Actions: regenerate actions/addskin-*.atn + native JSON
+.venv/bin/python scripts/make_addskinnoise_actions.py
 
 # скрипты: PYTHONPATH не нужен — скрипт сам вставляет src в sys.path
 .venv/bin/python scripts/freqautosplit_poc.py --input <file>
@@ -113,6 +124,24 @@ export PHOTOCRAFT_CLI=$PWD/squashfs-root/usr/bin/photocraft-cli
   Жёсткого порога нет. Калибровка радиуса — только при заметном расхождении.
 - Результаты (radius 10): LOW/композит RMSE ≈ 0.003–0.008 (PSNR ≈ 41–51 dB);
   native-реконструкция не хуже GIMP. Полные таблицы — в `out/freqsplit-poc/<asset>/report.md`.
+
+## Add Skin Noise (PoC)
+
+- `scripts/addskinnoise_poc.py`: `pore` (алгоритм Google: дубль → Smart Object →
+  Gaussian Noise 3 → Emboss → Gaussian Blur 0.3 → Overlay 0.5) и `texture` (серый слой →
+  Smart Object → Noise 12 → Median 2 → Noise 6 → Median 1 → Overlay).
+- Оба режима недеструктивные: smart filters редактируются, `--mask black|skin` скрывает
+  эффект; исходный слой не меняется. `plugin` не используем — он даёт Normal 100 % и
+  разрушающе заменяет изображение.
+- Проверка: `out/addskinnoise-poc/<asset>/<mode>/native/`; в манифесте — `smart_filters`.
+- Actions: `scripts/make_addskinnoise_actions.py` → `actions/addskin-pores.atn` (High Pass
+  0.5 вместо Emboss), `actions/addskin-texture.atn`, `actions/addskin-pores-emboss.action.json`
+  (native Emboss). Диалоги `[2, 3, 4]` / `[3, 4]`; roundtrip `.atn` проверяется скриптом.
+- `filter.stylize.emboss`, `layerMask.*` и `bevelEmboss` не экспортируются в `.atn` —
+  см. `atn-issue.txt`. GIMP-эталон пока не делался.
+- Когда Emboss появится в `.atn`: в `make_addskinnoise_actions.py` переключить
+  `PORE_NAME` на `pore_steps("emboss")`, обновить `expected_filters`, перегенерировать
+  `actions/addskin-*.atn`; native JSON оставить для старых версий PhotoCraft.
 
 ## GIMP-рецепты → PhotoCraft (только при портировании)
 

@@ -1,0 +1,69 @@
+{
+  "action": {
+    "color": "",
+    "dialogs": [
+      2,
+      3,
+      4
+    ],
+    "disabled": [],
+    "name": "Add Skin Pores",
+    "set": "SHSMAD",
+    "steps": [
+      [
+        "layer.duplicate",
+        {
+          "name": "Кожа: поры"
+        }
+      ],
+      [
+        "layer.smartObjects.convertToSmartObject",
+        {
+          "layer": "Кожа: поры"
+        }
+      ],
+      [
+        "filter.noise.addNoise",
+        {
+          "amount": 3,
+          "distribution": "gaussian",
+          "monochromatic": true,
+          "seed": 0
+        }
+      ],
+      [
+        "filter.other.highPass",
+        {
+          "radius": 0.5
+        }
+      ],
+      [
+        "filter.blur.gaussianBlur",
+        {
+          "radius": 0.3
+        }
+      ],
+      [
+        "layer.setProps",
+        {
+          "blend": "Overlay",
+          "layer": "Кожа: поры",
+          "opacity": 0.5
+        }
+      ]
+    ]
+  },
+  "stopped": {
+    "action": "Add Skin Pores",
+    "steps": 6
+  },
+  "saved": {
+    "actions": [
+      "Add Skin Pores"
+    ],
+    "bytes": 725,
+    "set": "SHSMAD",
+    "skipped": [],
+    "steps": 6
+  }
+}
